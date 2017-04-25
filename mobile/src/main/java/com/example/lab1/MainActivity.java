@@ -1,40 +1,47 @@
 package com.example.lab1;
 
 import android.content.Context;
+import android.content.DialogInterface;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
 import android.widget.TextView;
-import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.content.pm.PackageManager;
-import android.Manifest;
 import android.Manifest.permission;
-import android.app.Activity;
 
-import static android.R.id.text1;
+import android.support.v7.app.AlertDialog;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final int PERMISSION_REQUEST_CODE = 200;
+    private TextView alltext;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-
-        TelephonyManager manage = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
-
-
-
+        alltext  = (TextView)findViewById(R.id.text1);
+        if(checkPermission()){
+            realMainActivity();
+        }
+        else {
+            requestPermission();
+        }
 
         //final TextView text1 = (TextView)findViewById(R.id.text1);
        // text1.setText("\n Call state: \t" + convertCallStateToString(manage.getCallState()) +
         //"\n Network type: \t" + convertNetworkTypeToString(manage.getNetworkType()));
 
-        TextView alltext = (TextView)findViewById(R.id.text1);
+    }
+
+
+    private void realMainActivity() {
+
+        TelephonyManager manage = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+
 
         alltext.append("\nCallState:\t" +
                 convertCallStateToString(manage.getCallState()));
@@ -76,9 +83,11 @@ public class MainActivity extends AppCompatActivity {
             alltext.append("\n\tLAC:\t" + gsmCell.getLac());
         }
 
-
-
     }
+
+
+
+
 
     private String convertCallStateToString(int callState) {
         switch(callState){
@@ -159,7 +168,55 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    private boolean checkPermission() {
+        int result = ContextCompat.checkSelfPermission(getApplicationContext(), permission.READ_PHONE_STATE);
+        int result1 = ContextCompat.checkSelfPermission(getApplicationContext(), permission.ACCESS_COARSE_LOCATION);
+
+        return result == PackageManager.PERMISSION_GRANTED && result1 == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestPermission() {
+
+        ActivityCompat.requestPermissions(this, new String[]{permission.READ_PHONE_STATE, permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_CODE);
+
+    }
+
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSION_REQUEST_CODE:
+                if (grantResults.length > 0) {
+
+                    boolean readStateAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                    boolean locationAccepted = grantResults[1] == PackageManager.PERMISSION_GRANTED;
+
+                    if (readStateAccepted && locationAccepted) {
+                        //do the programm code
+                        realMainActivity();
+                    }
+
+                    else{
+                        alltext.setText("I need both permissions");
+                    }
+                    break;
+                }
+        }
+    }
+
+    private void showMessageOKCancel(String message, DialogInterface.OnClickListener okListener) {
+        new AlertDialog.Builder(MainActivity.this)
+                .setMessage(message)
+                .setPositiveButton("OK", okListener)
+                .setNegativeButton("Cancel", null)
+                .create()
+                .show();
+    }
+
 
 }
+
+
 
 
